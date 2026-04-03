@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>ISS Mission Control 🚀</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial;
+    color: cyan;
+    text-align: center;
+    background: black;
+}
+
+/* Stars */
+body::before {
+    content: "";
+    position: absolute;
+    width: 200%;
+    height: 200%;
+    background: url("https://www.transparenttextures.com/patterns/stardust.png");
+    animation: stars 60s linear infinite;
+    opacity: 0.3;
+}
+
+@keyframes stars {
+    from { transform: translate(0,0); }
+    to { transform: translate(-500px,-500px); }
+}
+
+h1 {
+    text-shadow: 0 0 20px cyan;
+}
+
+/* Panel */
+.box {
+    position: relative;
+    margin: auto;
+    margin-top: 30px;
+    width: 320px;
+    padding: 20px;
+    border-radius: 15px;
+    border: 1px solid cyan;
+    box-shadow: 0 0 30px cyan;
+    background: rgba(0,0,0,0.7);
+}
+
+/* Radar pulse */
+.radar {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    border: 2px solid cyan;
+    margin: 10px auto;
+    position: relative;
+}
+
+.radar::after {
+    content: "";
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 2px solid cyan;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(2); opacity: 0; }
+}
+
+/* Signal */
+.signal {
+    width: 10px;
+    height: 10px;
+    background: lime;
+    border-radius: 50%;
+    display: inline-block;
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+    0% { opacity: 1; }
+    50% { opacity: 0.2; }
+    100% { opacity: 1; }
+}
+
+/* Speed bar */
+.barBox {
+    width: 100%;
+    background: #111;
+    border: 1px solid cyan;
+}
+
+.bar {
+    height: 10px;
+    width: 0%;
+    background: lime;
+}
+
+/* Canvas */
+canvas {
+    margin-top: 10px;
+}
+
+</style>
+</head>
+
+<body>
+
+<h1>🛰️ ISS MISSION CONTROL</h1>
+
+<div class="box">
+
+<div class="radar"></div>
+
+<canvas id="earth" width="200" height="200"></canvas>
+
+<p id="data">Loading...</p>
+<p id="time"></p>
+<p id="status"></p>
+
+<p><span class="signal"></span> SIGNAL ACTIVE</p>
+
+<p>Speed Meter</p>
+<div class="barBox">
+    <div id="bar" class="bar"></div>
+</div>
+
+</div>
+
+<script>
+
+// Canvas setup
+const canvas = document.getElementById("earth");
+const ctx = canvas.getContext("2d");
+
+let issX = 100;
+let issY = 100;
+
+// Draw Earth + ISS
+function drawEarth() {
+    ctx.clearRect(0, 0, 200, 200);
+
+    // Earth circle
+    ctx.beginPath();
+    ctx.arc(100, 100, 80, 0, Math.PI * 2);
+    ctx.strokeStyle = "cyan";
+    ctx.stroke();
+
+    // ISS dot
+    ctx.beginPath();
+    ctx.arc(issX, issY, 5, 0, Math.PI * 2);
+    ctx.fillStyle = "red";
+    ctx.fill();
+
+    requestAnimationFrame(drawEarth);
+}
+drawEarth();
+
+// Fetch ISS data
+async function getISS() {
+    const res = await fetch("https://api.wheretheiss.at/v1/satellites/25544");
+    const d = await res.json();
+
+    document.getElementById("data").innerHTML =
+        "LAT: " + d.latitude.toFixed(2) + "<br>" +
+        "LON: " + d.longitude.toFixed(2) + "<br>" +
+        "SPD: " + d.velocity.toFixed(2) + " km/h<br>" +
+        "ALT: " + d.altitude.toFixed(2) + " km";
+
+    document.getElementById("time").innerHTML =
+        "TIME: " + new Date().toLocaleTimeString();
+
+    document.getElementById("status").innerHTML =
+        "STATUS: 🟢 ORBITING";
+
+    // Speed bar
+    let speedPercent = (d.velocity / 28000) * 100;
+    document.getElementById("bar").style.width = speedPercent + "%";
+
+    // Update ISS position on Earth
+    issX = 100 + (d.longitude / 180) * 80;
+    issY = 100 - (d.latitude / 90) * 80;
+}
+
+// Update every 3 sec
+setInterval(getISS, 3000);
+getISS();
+
+</script>
+
+</body>
+</html>
