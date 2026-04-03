@@ -1,263 +1,143 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>ISS Space Dashboard 🚀</title>
-
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+<title>3D Earth Control 🌍</title>
 
 <style>
 body {
     margin: 0;
     overflow: hidden;
-    font-family: 'Inter', sans-serif;
-    color: #e6f1ff;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
     background: black;
 }
 
-/* 🌌 Stars */
-canvas {
+canvas#stars {
     position: fixed;
     top: 0;
     left: 0;
-    z-index: -1;
+    z-index: 0;
 }
 
-/* Card */
-.container {
-    width: 340px;
-    padding: 25px;
-    border-radius: 18px;
-    background: rgba(0,0,0,0.6);
-    backdrop-filter: blur(20px);
-    box-shadow: 0 10px 50px rgba(0,255,255,0.2);
-    border: 1px solid rgba(255,255,255,0.1);
-}
-
-/* Title */
-h1 {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 18px;
-    text-align: center;
-    margin-bottom: 15px;
-    color: #67e8f9;
-}
-
-/* Earth */
-.earth-box {
-    position: relative;
-    width: 180px;
-    height: 180px;
-    margin: auto;
-}
-
-.earth {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    background: url("https://upload.wikimedia.org/wikipedia/commons/9/97/The_Earth_seen_from_Apollo_17.jpg");
-    background-size: cover;
-    background-position: center;
-}
-
-/* Shadow */
-.shadow {
-    position: absolute;
-    width: 180px;
-    height: 180px;
-    border-radius: 50%;
+#scene {
+    position: fixed;
     top: 0;
     left: 0;
-    background: radial-gradient(circle at 30% 50%, transparent 40%, rgba(0,0,0,0.8) 75%);
+    z-index: 1;
 }
-
-/* Radar */
-.radar {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    background: conic-gradient(rgba(0,255,255,0.2), transparent 60%);
-    animation: sweep 4s linear infinite;
-}
-
-@keyframes sweep {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-}
-
-/* ISS dot */
-.iss {
-    position: absolute;
-    width: 8px;
-    height: 8px;
-    background: red;
-    border-radius: 50%;
-    box-shadow: 0 0 15px red, 0 0 30px red;
-    transition: all 2s linear;
-}
-
-/* Data */
-.data {
-    margin-top: 15px;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    font-size: 13px;
-}
-
-.data div {
-    background: rgba(255,255,255,0.05);
-    padding: 8px;
-    border-radius: 8px;
-}
-
-/* Status */
-.status {
-    margin-top: 10px;
-    text-align: center;
-}
-
-.signal {
-    width: 8px;
-    height: 8px;
-    background: #22c55e;
-    border-radius: 50%;
-    display: inline-block;
-    animation: blink 1s infinite;
-}
-
-@keyframes blink {
-    50% { opacity: 0.3; }
-}
-
-/* Speed bar */
-.barBox {
-    margin-top: 15px;
-    width: 100%;
-    height: 6px;
-    background: rgba(255,255,255,0.1);
-    border-radius: 10px;
-}
-
-.bar {
-    height: 100%;
-    width: 0%;
-    background: linear-gradient(90deg, #22c55e, #4ade80);
-    border-radius: 10px;
-    box-shadow: 0 0 10px #22c55e;
-}
-
-.footer {
-    margin-top: 10px;
-    text-align: center;
-    font-size: 11px;
-    opacity: 0.6;
-}
-
 </style>
 </head>
 
 <body>
 
 <canvas id="stars"></canvas>
+<canvas id="scene"></canvas>
 
-<div class="container">
+<!-- Three.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
-<h1>ISS LIVE TRACKER</h1>
-
-<div class="earth-box">
-    <div class="earth"></div>
-    <div class="shadow"></div>
-    <div class="radar"></div>
-    <div id="issDot" class="iss"></div>
-</div>
-
-<div class="data">
-    <div id="lat">LAT: --</div>
-    <div id="lon">LON: --</div>
-    <div id="speed">SPD: --</div>
-    <div id="alt">ALT: --</div>
-</div>
-
-<div class="status">
-    <span class="signal"></span> LIVE TRACKING
-</div>
-
-<div class="barBox">
-    <div id="bar" class="bar"></div>
-</div>
-
-<div class="footer" id="time">--</div>
-
-</div>
+<!-- OrbitControls -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/examples/js/controls/OrbitControls.min.js"></script>
 
 <script>
 
-/* 🌌 Stars */
-const canvas = document.getElementById("stars");
-const ctx = canvas.getContext("2d");
+/* 🌌 STARS */
+const starCanvas = document.getElementById("stars");
+const starCtx = starCanvas.getContext("2d");
 
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+starCanvas.width = window.innerWidth;
+starCanvas.height = window.innerHeight;
 
 let stars = [];
 
-for (let i = 0; i < 200; i++) {
+for (let i = 0; i < 300; i++) {
     stars.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
+        x: Math.random() * starCanvas.width,
+        y: Math.random() * starCanvas.height,
         size: Math.random() * 2,
-        speed: Math.random() * 0.5
+        speed: Math.random() * 0.3
     });
 }
 
 function animateStars() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-stars.forEach(s => {
-        s.y += s.speed;
-        if (s.y > canvas.height) s.y = 0;
+    starCtx.clearRect(0, 0, starCanvas.width, starCanvas.height);
 
-        ctx.fillStyle = "white";
-        ctx.fillRect(s.x, s.y, s.size, s.size);
+    stars.forEach(s => {
+        s.y += s.speed;
+        if (s.y > starCanvas.height) s.y = 0;
+
+        starCtx.fillStyle = "white";
+        starCtx.fillRect(s.x, s.y, s.size, s.size);
     });
 
     requestAnimationFrame(animateStars);
 }
 animateStars();
 
-/* ISS DATA */
-async function getISS() {
-    const res = await fetch("https://api.wheretheiss.at/v1/satellites/25544");
-    const d = await res.json();
+/* 🌍 3D EARTH */
+const canvas = document.getElementById("scene");
 
-    document.getElementById("lat").innerText = "LAT: " + d.latitude.toFixed(2);
-    document.getElementById("lon").innerText = "LON: " + d.longitude.toFixed(2);
-    document.getElementById("speed").innerText = "SPD: " + Math.round(d.velocity) + " km/h";
-    document.getElementById("alt").innerText = "ALT: " + Math.round(d.altitude) + " km";
+const scene = new THREE.Scene();
 
-    document.getElementById("time").innerText =
-        "Updated: " + new Date().toLocaleTimeString();
+const camera = new THREE.PerspectiveCamera(
+    75,
+    window.innerWidth / window.innerHeight,
+    0.1,
+    1000
+);
+camera.position.z = 2.5;
 
-    let speedPercent = (d.velocity / 28000) * 100;
-    document.getElementById("bar").style.width = speedPercent + "%";
+const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
 
-    let x = 90 + (d.longitude / 180) * 80;
-    let y = 90 - (d.latitude / 90) * 80;
+/* 🖱️ MOUSE CONTROLS */
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.enableZoom = true;
+controls.enablePan = false;
 
-    let dot = document.getElementById("issDot");
-    dot.style.left = x + "px";
-    dot.style.top = y + "px";
+/* 🌍 EARTH */
+const geometry = new THREE.SphereGeometry(1, 64, 64);
+
+const texture = new THREE.TextureLoader().load(
+    "https://threejs.org/examples/textures/earth_atmos_2048.jpg"
+);
+
+const material = new THREE.MeshStandardMaterial({
+    map: texture
+});
+
+const earth = new THREE.Mesh(geometry, material);
+scene.add(earth);
+
+/* ☀️ LIGHT */
+const light = new THREE.DirectionalLight(0xffffff, 1.2);
+light.position.set(5, 3, 5);
+scene.add(light);
+
+scene.add(new THREE.AmbientLight(0x404040));
+
+/* 🔄 ANIMATION */
+function animate() {
+    requestAnimationFrame(animate);
+
+    earth.rotation.y += 0.0015;
+
+    controls.update(); // important for smooth control
+
+    renderer.render(scene, camera);
 }
+animate();
 
-setInterval(getISS, 3000);
-getISS();
+/* 📱 RESIZE */
+window.addEventListener("resize", () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+
+    starCanvas.width = window.innerWidth;
+    starCanvas.height = window.innerHeight;
+});
 
 </script>
 
 </body>
 </html>
-
